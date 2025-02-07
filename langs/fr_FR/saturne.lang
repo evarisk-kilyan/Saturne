@@ -129,6 +129,9 @@ PublicInterfaceUseSignatoryDescription = Utilisation de la signature sur l'inter
 PublicInterfaceUser                    = Utilisateur par défaut
 PublicInterfaceUserDescription         = Utilisateur utilisé sur l'interface publique
 PublicInterfaceForbidden               = Accès interdit à l'interface publique %s
+ErrorTemplateNotFound                  = Modèle non trouvé : %s
+PublicInterfaceTemplateHelp            = Modèle de l'interface publique, fichier qui sera utilisé pour l'affichage de l'interface publique
+PublicInterfaceUrlHelp                 = Saisissez l'URL de l'interface publique. Par exemple, pour une interface publique avec l'url https://www.evarisk.com/mon/interface/publique, saisissez &quot;/mon/interface/publique&quot;
 
 
 #

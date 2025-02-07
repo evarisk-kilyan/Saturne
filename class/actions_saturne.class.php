@@ -161,10 +161,25 @@ class ActionsSaturne
     {
         if (strpos($parameters['context'], 'index') !== false) {
             require_once __DIR__ . '/saturneredirection.class.php';
+            require_once __DIR__ . '/saturnepublicinterface.class.php';
 
             $saturneRedirection = new SaturneRedirection($this->db);
+            $publicInterface    = new SaturnePublicInterface($this->db);
 
             $originalUrl = GETPOST('original_url', 'alpha');
+
+            $publicInterfaces = $publicInterface->fetchAll();
+            if (is_array($publicInterfaces) && !empty($publicInterfaces)) {
+                foreach ($publicInterfaces as $publicInterface) {
+                    if ($publicInterface->url == $originalUrl) {
+                        // Première solution mais on doit adapter les includes
+                        require_once DOL_DOCUMENT_ROOT . $publicInterface->template;
+                        // deuxième solution
+                        //header('Location: ' . DOL_DOCUMENT_ROOT . $publicInterface->template . str_replace('original_url=' . $originalUrl, '', $_SERVER['QUERY_STRING']));
+                        exit;
+                    }
+                }
+            }
 
             $redirections = $saturneRedirection->fetchAll();
             if (is_array($redirections) && !empty($redirections)) {

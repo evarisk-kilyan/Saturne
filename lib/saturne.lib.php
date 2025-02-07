@@ -48,6 +48,11 @@ function saturne_admin_prepare_head(): array
     $head[$h][2] = 'redirection';
     $h++;
 
+    $head[$h][0] = dol_buildpath('/saturne/admin/public_interface.php', 1) . '?module_name=Saturne';
+    $head[$h][1] = $conf->browser->layout != 'phone' ? '<i class="fas fa-globe pictofixedwidth"></i>' . $langs->trans('PublicInterface') : '<i class="fas fa-globe"></i>';
+    $head[$h][2] = 'publicInterface';
+    $h++;
+
     $head[$h][0] = dol_buildpath('/saturne/admin/about.php', 1) . '?module_name=Saturne';
     $head[$h][1] = $conf->browser->layout != 'phone' ? '<i class="fab fa-readme pictofixedwidth"></i>' . $langs->trans('About') : '<i class="fab fa-readme"></i>';
     $head[$h][2] = 'about';

@@ -232,6 +232,28 @@ class modSaturne extends DolibarrModules
         $this->rights[$r][1] = $langs->transnoentities('ReadAdminPage', 'Saturne');
         $this->rights[$r][4] = 'adminpage';
         $this->rights[$r][5] = 'read';
+        $r++;
+
+        /* PUBLIC INTERFACE PERMISSIONS */
+        $this->rights[$r][0] = $this->numero . sprintf('%02d', $r + 1);
+        $this->rights[$r][1] = $langs->transnoentities('ReadPublicInterface', 'Saturne');
+        $this->rights[$r][4] = 'publicinterface';
+        $this->rights[$r][5] = 'read';
+        $r++;
+        $this->rights[$r][0] = $this->numero . sprintf('%02d', $r + 1);
+        $this->rights[$r][1] = $langs->transnoentities('CreatePublicInterface', 'Saturne');
+        $this->rights[$r][4] = 'publicinterface';
+        $this->rights[$r][5] = 'write';
+        $r++;
+        $this->rights[$r][0] = $this->numero . sprintf('%02d', $r + 1);
+        $this->rights[$r][1] = $langs->transnoentities('CreatePublicInterface', 'Saturne');
+        $this->rights[$r][4] = 'publicinterface';
+        $this->rights[$r][5] = 'creer';
+        $r++;
+        $this->rights[$r][0] = $this->numero . sprintf('%02d', $r + 1);
+        $this->rights[$r][1] = $langs->transnoentities('DeleteObjects', 'Saturne');
+        $this->rights[$r][4] = 'publicinterface';
+        $this->rights[$r][5] = 'delete';
 
         // Main menu entries to add
 		$this->menu = [];
@@ -309,7 +331,10 @@ class modSaturne extends DolibarrModules
         $sqlFolder = scandir(__DIR__ . '/../../sql');
         foreach ($sqlFolder as $subFolder) {
             if (!preg_match('/\./', $subFolder)) {
-                $this->_load_tables('/saturne/sql/' . $subFolder . '/');
+                $result = $this->_load_tables('/saturne/sql/' . $subFolder . '/');
+                if ($result < 0) {
+                    return -1; // Do not activate module if error 'not allowed' returned when loading module SQL queries (the _load_table run sql with run_sql with the error allowed parameter set to 'default')
+                }
             }
         }
 

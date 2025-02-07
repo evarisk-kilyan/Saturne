@@ -129,7 +129,9 @@ PublicInterfaceUseSignatoryDescription = Using the signature on the public inter
 PublicInterfaceUser                    = Default user
 PublicInterfaceUserDescription         = User used on the public interface
 PublicInterfaceForbidden               = No access to public interface %s
-
+ErrorTemplateNotFound                  = Template not found : %s
+PublicInterfaceTemplateHelp            = Public interface template, a file that will be used for displaying the public interface
+PublicInterfaceUrlHelp                 = Enter the URL of the public interface. For example, for a public interface with the URL https://www.evarisk.com/mon/interface/publique, enter &quot;/mon/interface/publique&quot;
 
 #
 # PWA - Progressive Web App
