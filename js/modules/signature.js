@@ -105,6 +105,7 @@ window.saturne.signature.event = function() {
  */
 window.saturne.signature.drawSignatureOnCanvas = function() {
   window.saturne.signature.canvas = document.querySelector('.canvas-signature');
+
   if (window.saturne.signature.canvas) {
     let ratio = Math.max(window.devicePixelRatio || 1, 1);
     window.saturne.signature.canvas.signaturePad = new SignaturePad(window.saturne.signature.canvas, {

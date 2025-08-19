@@ -195,7 +195,7 @@ function saturne_fetch_all_object_type(string $className = '', string $sortorder
  * @return array                           Array of tabs.
  * @throws Exception
  */
-function saturne_object_prepare_head(CommonObject $object, $head = [], array $moreparam = [], bool $showAttendantsTab = false, bool $showNoteTab = true, bool $showDocumentTab = true, bool $showAgendaTab = true): array
+function saturne_object_prepare_head(CommonObject $object, $head = [], array $moreparam = [], bool $showAttendantsTab = false, bool $showNoteTab = true, bool $showDocumentTab = true, bool $showAgendaTab = true, bool $showSpeadTab = true): array
 {
     // Global variables definitions.
     global $conf, $db, $moduleName, $moduleNameLowerCase, $langs, $user;
@@ -239,6 +239,13 @@ function saturne_object_prepare_head(CommonObject $object, $head = [], array $mo
                 $head[$h][1] .= '<span class="badge marginleftonlyshort">' . $nbAttendants . '</span>';
             }
             $head[$h][2] = 'attendants';
+            $h = $h + 10;
+        }
+
+        if ($showSpeadTab) {
+            $head[$h][0] = dol_buildpath('/saturne/public/spread/add_spread.php', 1) . '?id=' . $object->id . '&module_name=' . $moduleName . '&object_type=' . $objectType . '&document_type=' . (!empty($moreparam['documentType']) ? $moreparam['documentType'] : '') . '&attendant_table_mode=' . (empty($moreparam['attendantTableMode']) ? 'advanced' : $moreparam['attendantTableMode']);
+            $head[$h][1] = $conf->browser->layout != 'phone' ? '<i class="fas fa-check-circle pictofixedwidth"></i>' . $langs->trans('Spread') : '<i class="fas fa-check-circle"></i>';
+            $head[$h][2] = 'spread';
             $h = $h + 10;
         }
 

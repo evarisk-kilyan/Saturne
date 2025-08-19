@@ -537,9 +537,9 @@ window.saturne.mediaGallery.addToFavorite = function( event ) {
 		success: function ( resp ) {
       if (previousFavorite != filename) {
         if (typeof objectPhotoClass != 'undefined' && objectPhotoClass.length > 0) {
-          $('.photo.'+objectPhotoClass).replaceWith($(resp).find('.photo.'+objectPhotoClass).first())
         }
       }
+      $('.photo.'+objectPhotoClass).replaceWith($(resp).find('.photo.'+objectPhotoClass).first())
       if ($('.floatleft.inline-block.valignmiddle.divphotoref').length > 0) {
         $('.floatleft.inline-block.valignmiddle.divphotoref').replaceWith($(resp).find('.floatleft.inline-block.valignmiddle.divphotoref'))
       }

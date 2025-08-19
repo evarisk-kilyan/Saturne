@@ -229,6 +229,18 @@ checkDateEndJob        = Vérification de la date de fin des certificats
 checkDateEndJobComment = Vérification et mise à jour du statut des certificats expirés en fonction de la date de fin
 
 
+#
+# Spreading - Spreading
+#
+
+# Data - Donnée
+Spread               = Diffusion
+Recipients           = Destinataires
+SignedOn             = Signé le
+UserSignatureList    = Liste des utilisateurs et signatures
+ValidateSignature    = Valider la signature
+EnterNotePrivateHere = Entrez votre note privée ici
+
 
 #
 # Element - element
