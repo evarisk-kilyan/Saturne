@@ -595,6 +595,8 @@ $(document).ready(function () {
 
 .save-private-note-btn {
     min-width: 100px;
+    text-align: center;
+    justify-content: center;
 }
 
 .remove-user-btn {
