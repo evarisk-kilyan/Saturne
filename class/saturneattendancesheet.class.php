@@ -37,7 +37,7 @@ class SaturneAttendanceSheet extends SaturneObject
 	/**
 	 * @var string Module name.
 	 */
-	public $module = 'saturne';
+	public $module = 'doliletter';
 
 	/**
 	 * @var string Element type of object.

@@ -200,8 +200,7 @@ class modSaturne extends DolibarrModules
 
             // CONST DOLIBARR
             $i++ => ['MAIN_ALLOW_SVG_FILES_AS_IMAGES', 'integer', 1, '', 0, 'current'],
-            $i   => ['MAIN_CACHE_COUNT ', 'integer', 1, '', 0, 'current']
-
+            $i   => ['MAIN_CACHE_COUNT ', 'integer', 1, '', 0, 'current'],
 		];
 
 		if (!isset($conf->saturne) || !isset($conf->saturne->enabled)) {
@@ -382,6 +381,13 @@ class modSaturne extends DolibarrModules
         ];
 
         saturne_manage_extrafields($extraFieldsArrays);
+
+        delDocumentModel('signinsheet_odt', 'signinsheet');
+
+		addDocumentModel('signinsheet_odt', 'signinsheet', 'ODT templates', 'SATURNE_SIGNINSHEET_ADDON_ODT_PATH');
+
+        dolibarr_set_const($this->db, 'SATURNE_SIGNINSHEET_ADDON_ODT_PATH', 'DOL_DOCUMENT_ROOT/custom/saturne/documents/doctemplates/signinsheet/', 'chaine', 0, '', $conf->entity);
+        dolibarr_set_const($this->db, 'SATURNE_SIGNINSHEET_ADDON', 'mod_signinsheet_standard', 'chaine', 0, '', $conf->entity);
 
         return $this->_init($sql, $options);
     }

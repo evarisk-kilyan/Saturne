@@ -67,9 +67,6 @@ if (isModEnabled('societe')) {
 require_once __DIR__ . '/../../class/saturnesignature.class.php';
 require_once __DIR__ . '/../../class/saturnemail.class.php';
 require_once __DIR__ . '/../../class/saturneattendancesheet.class.php';
-require_once __DIR__ . '/../../../' . $moduleNameLowerCase . '/class/' . $objectType . '.class.php';
-require_once __DIR__ . '/../../../' . $moduleNameLowerCase . '/lib/' . $moduleNameLowerCase . '_' . $objectType . '.lib.php';
-
 // Global variables definitions
 global $conf, $db, $hookmanager, $langs;
 
@@ -95,9 +92,8 @@ $subaction          = GETPOST('subaction', 'alpha');
 
 // Initialize technical objects
 $className       = ucfirst($objectType);
-$object          = new $className($db);
-$signatory       = new SaturneSignature($db, $moduleNameLowerCase, $object->element);
-$saturneMail     = new SaturneMail($db, $moduleNameLowerCase, $object->element);
+$signatory       = new SaturneSignature($db, $moduleNameLowerCase, $objectType);
+$saturneMail     = new SaturneMail($db, $moduleNameLowerCase, $objectType);
 $usertmp         = new User($db);
 $attendanceSheet = new SaturneAttendanceSheet($db, $moduleNameLowerCase);
 $form        = new Form($db);
@@ -106,19 +102,16 @@ if (isModEnabled('societe')) {
     $contact    = new Contact($db);
 }
 
-$object->fetch($id, $ref);
-$attendanceSheet->fetch(0, '', ' AND object_type = ' . "'" . $object->element . "'" . ' AND fk_object = ' . $object->id);
+$attendanceSheet->fetch(0, '', ' AND object_type = ' . "'" . $objectType  . "'" . ' AND fk_object = ' . $id);
 
 if ($action == 'add_spread_user') {
     if ($attendanceSheet->id <= 0 || $attendanceSheet->id == null) {
-
-        echo '<pre>'; print_r($objectType . ' => ' . $id); echo '</pre>';
 
         $attendanceSheet->ref           = $object->ref;
         $attendanceSheet->status        = $attendanceSheet::STATUS_DRAFT;
         $attendanceSheet->fk_object     = $id;
         $attendanceSheet->object_type   = $objectType;
-        $attendanceSheet->entity        = $object->entity;
+        $attendanceSheet->entity        = $conf->entity;
         $attendanceSheet->fk_user_creat = $user->id;
 
         $result = $attendanceSheet->create($user);
@@ -152,7 +145,6 @@ if ($action == 'remove_spread_user') {
     $signatory->fetch($signatory_id);
     if ($signatory->id > 0) {
         $result = $signatory->delete($user);
-        echo '<pre>'; print_r($result); echo '</pre>'; exit;
     }
     $action = '';
 }
@@ -161,8 +153,14 @@ if ($action == 'update_spread_user') {
     $signatory_id = GETPOSTINT('signatory_id');
     $signatory->fetch($signatory_id);
     if ($signatory->id > 0) {
+        $tmpUser = new User($db);
+        $user->fetch(GETPOSTINT('user_id'));
+
         $signatory->element_id   = GETPOSTINT('user_id');
         $signatory->element_type = 'user';
+
+        $signatory->firstname = $user->firstname;
+        $signatory->lastname  = $user->lastname;
 
         $signatory->update($user);
     }

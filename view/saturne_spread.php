@@ -48,6 +48,8 @@ require_once __DIR__ . '/../class/saturnemail.class.php';
 require_once __DIR__ . '/../../' . $moduleNameLowerCase . '/class/' . $objectType . '.class.php';
 require_once __DIR__ . '/../../' . $moduleNameLowerCase . '/lib/' . $moduleNameLowerCase . '_' . $objectType . '.lib.php';
 
+require_once __DIR__ . '/../class/saturnedocuments/signinsheetdocument.class.php';
+
 // Global variables definitions
 global $conf, $db, $hookmanager, $langs, $user;
 
@@ -70,6 +72,7 @@ $object      = new $className($db);
 $signatory   = new SaturneSignature($db, $moduleNameLowerCase, $object->element);
 $saturneMail = new SaturneMail($db, $moduleNameLowerCase, $object->element);
 $usertmp     = new User($db);
+$document    = new SigninSheetDocument($db);
 if (isModEnabled('societe')) {
     $thirdparty = new Societe($db);
     $contact    = new Contact($db);
@@ -117,6 +120,8 @@ if (empty($resHook)) {
     require_once __DIR__ . '/../core/tpl/actions/banner_actions.tpl.php';
 }
 
+require_once __DIR__ . '/../core/tpl/documents/documents_action.tpl.php';
+
 /*
 *	View
 */
@@ -132,38 +137,6 @@ if ($id > 0 || !empty($ref) && empty($action)) {
     saturne_get_fiche_head($object, 'spread', $title);
     saturne_banner_tab($object, 'ref', '', 1, 'ref', 'ref', '', !empty($object->photo));
 
-    // Add JavaScript for dynamic field visibility
-    print '<script type="text/javascript">
-        jQuery(document).ready(function() {
-            function toggleFieldsVisibility() {
-                var selectedType = jQuery("select[name=\'add_type\']").val();
-                
-                // Hide all field containers first
-                jQuery(".thirdparty-field").hide();
-                jQuery(".user-field").hide();
-                jQuery(".contact-field").hide();
-                jQuery(".free-field").hide();
-                jQuery(".thirdparty-contact-field").hide();
-                
-                // Show the selected type fields based on the selected type
-                if (selectedType === "thirdparty") {
-                    jQuery(".thirdparty-field").show();
-                    jQuery(".thirdparty-contact-field").show();
-                } else {
-                    jQuery("." + selectedType + "-field").show();
-                }
-            }
-            
-            // Initial state setup
-            toggleFieldsVisibility();
-            
-            // Add change event handler
-            jQuery("select[name=\'add_type\']").change(function() {
-                toggleFieldsVisibility();
-            });
-        });
-    </script>';
-
     print '<div class="fichecenter">';
 
     $backtocard = dol_buildpath('/custom/' . $moduleNameLowerCase . '/view/' . $object->element . '/' . $object->element . '_card.php?id=' . $id, 1);
@@ -176,123 +149,32 @@ if ($id > 0 || !empty($ref) && empty($action)) {
 
     print '</div>';
 
+    // Add link to public interface
+    $publicUrl = dol_buildpath('/saturne/public/spread/add_spread.php', 1) . '?id=' . $object->id . '&module_name=' . $moduleName . '&object_type=' . $objectType . '&document_type=' . (!empty($moreparam['documentType']) ? $moreparam['documentType'] : '') . '&attendant_table_mode=' . (empty($moreparam['attendantTableMode']) ? 'advanced' : $moreparam['attendantTableMode']);
+    print '<div class="tabsAction">';
+    print '<a class="butAction" href="' . $publicUrl . '" target="_blank">' . $langs->trans('PublicInterface') . '</a>';
+    print '</div>';
+
     print '<div class="spread-table-container">';
 
-    print load_fiche_titre($langs->trans('Recipients'), '', '');
+    $modulePart = 'saturne:SigninSheet';
+    $objref    = dol_sanitizeFileName($attendanceSheet->ref);
+    $dirFiles  = $attendanceSheet->element . '/' . $objref;
+    $fileDir   = $upload_dir . '/' . $dirFiles;
+    // Protocole (http ou https)
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'
+        || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
 
-    print '<table class="border centpercent tableforfield">';
+    // Nom de domaine + port (si différent de 80/443)
+    $host = $_SERVER['HTTP_HOST'];
 
-    print '<tr class="liste_titre">';
-    print '<td>' . $langs->trans('AddType') . '</td>'; // Type column
-    print '<td colspan="2">' . $langs->trans('Recipient') . '</td>'; // Merged recipient column
-    if ($attendantTableMode == 'simple') {
-        print '<td class="center ' . ($conf->browser->layout != 'classic' && $object->status > $object::STATUS_DRAFT ? 'hidden': '') . '">' . $langs->trans('Role') . '</td>';
-    }
-    print '<td class="center">' . $langs->trans('SignatureLink') . '</td>';
-    print '<td class="center">' . $langs->trans('SendMailDate') . '</td>';
-    print '<td class="' . ($conf->browser->layout != 'classic' ? 'hidden': '') . '">' . $langs->trans('SignatureDate') . '</td>';
-    print '<td class="center">' . $langs->trans('Attendance') . '</td>';
-    print '<td class="center">' . $langs->trans('SignatureActions') . '</td>';
-    print '</tr>';
+    // URI + query string
+    $requestUri = $_SERVER['REQUEST_URI'];
 
-    print '<form method="POST" action="' . $_SERVER['PHP_SELF'] . '?id=' . $id . '&module_name=' . $moduleName . '&object_type=' . $object->element . '&document_type=' . $documentType . '&attendant_table_mode=' . $attendantTableMode . '">';
-    print '<input type="hidden" name="token" value="' . newToken() . '">';
-    print '<input type="hidden" name="action" value="add_spread">';
-    
-    print '<tr class="oddeven">';
-    print '<td>';
-    // Dropdown for selection of addition type
-    $addTypeOptions = [
-        'thirdparty' => $langs->trans('ThirdParty'),
-        'user' => $langs->trans('User'),
-        'contact' => $langs->trans('Contact'),
-        'free' => $langs->trans('Free')
-    ];
-    print $form->selectarray('add_type', $addTypeOptions, GETPOST('add_type', 'alpha') ?: 'thirdparty', 0, 0, 0, '', 0, 0, 0, '', 'minwidth100 maxwidth150');
-    print '</td>';
-    
-    // Merged recipient column for all types
-    print '<td colspan="2">';
-    
-    // THIRDPARTY fields (company + associated contacts)
-    print '<div class="thirdparty-field">';
-    print img_picto('', 'company', 'class="pictofixedwidth"');
-    $selectedCompany = GETPOSTISSET('newcompany' . (($attendantTableMode == 'advanced') ? $signatoryRole : '')) ? GETPOST('newcompany' . (($attendantTableMode == 'advanced') ? $signatoryRole : ''), 'int') : (empty($object->socid) ? 0 : $object->socid);
-    $moreparam       = '&module_name=' . urlencode($moduleName) . '&object_type=' . urlencode($object->element) . '&document_type=' . $documentType . '&attendant_table_mode=' . urlencode($attendantTableMode);
-    $moreparam       .= '&backtopage=' . urlencode($_SERVER['PHP_SELF'] . '?id=' . $object->id . $moreparam);
-    // Add placeholder attribute via JavaScript since selectCompaniesForNewContact doesn't support it directly
-    print '<script type="text/javascript">
-        jQuery(document).ready(function() {
-            jQuery(".thirdparty-field select").attr("data-placeholder", "' . $langs->trans('ThirdParty') . '");
-        });
-    </script>';
-    $formcompany->selectCompaniesForNewContact($object, 'id', $selectedCompany, 'newcompany' . (($attendantTableMode == 'advanced') ? $signatoryRole : ''), '', 0, $moreparam, 'minwidth300imp');
-    print '</div>';
-    
-    // Contact field specifically for thirdparty type
-    print '<div class="thirdparty-contact-field marginleftonly">';
-    print img_object('', 'contact', 'class="pictofixedwidth"');
-    // Add placeholder attribute via JavaScript
-    print '<script type="text/javascript">
-        jQuery(document).ready(function() {
-            jQuery(".thirdparty-contact-field select").attr("data-placeholder", "' . $langs->trans('Contact') . '");
-        });
-    </script>';
-    print $form->selectcontacts(($selectedCompany > 0 ? $selectedCompany : -1), GETPOST('contactID'), 'attendant_thirdparty_contact', 1, $alreadyAddedSignatories['socpeople'] ?? [], '', 1, 'minwidth200 widthcentpercentminusx maxwidth300');
-    if (!empty($selectedCompany) && $selectedCompany > 0 && $user->rights->societe->creer) {
-        $newcardbutton = '<a href="' . DOL_URL_ROOT . '/contact/card.php?socid=' . $selectedCompany . '&action=create' . $moreparam . urlencode('&newcompany' . (($attendantTableMode == 'advanced') ? $signatoryRole : '') . '=' . GETPOST('newcompany' . (($attendantTableMode == 'advanced') ? $signatoryRole : '')) . '&contactID=&#95;&#95;ID&#95;&#95;') . '" title="' . $langs->trans('NewContact') . '"><span class="fa fa-plus-circle valignmiddle paddingleft"></span></a>';
-        print $newcardbutton;
-    }
-    print '</div>';
-    
-    // USER field
-    print '<div class="user-field">';
-    print img_picto('', 'user', 'class="pictofixedwidth"');
-    // Add placeholder attribute via JavaScript
-    print '<script type="text/javascript">
-        jQuery(document).ready(function() {
-            jQuery(".user-field select").attr("data-placeholder", "' . $langs->trans('User') . '");
-        });
-    </script>';
-    print $form->select_dolusers('', 'attendant_user', 1, $alreadyAddedSignatories['user'] ?? [], 0, '', '', $conf->entity, 0, 0, '', 0, '', 'minwidth300 widthcentpercentminusx');
-    print '</div>';
-    
-    // CONTACT field (standalone contact selection)
-    print '<div class="contact-field">';
-    print img_object('', 'contact', 'class="pictofixedwidth"');
-    // Add placeholder attribute via JavaScript
-    print '<script type="text/javascript">
-        jQuery(document).ready(function() {
-            jQuery(".contact-field select").attr("data-placeholder", "' . $langs->trans('Contact') . '");
-        });
-    </script>';
-    print $form->selectcontacts(-1, GETPOST('contactID'), 'attendant_contact', 1, $alreadyAddedSignatories['socpeople'] ?? [], '', 1, 'minwidth300 widthcentpercentminusx');
-    print '</div>';
-    
-    // FREE input fields
-    print '<div class="free-field">';
-    print img_picto('', 'object_generic', 'class="pictofixedwidth"');
-    print '<input type="text" name="free_attendant_name" class="flat minwidth300" placeholder="' . $langs->trans('Name') . '" value="' . GETPOST('free_attendant_name', 'alpha') . '"><br>';
-    print '<div class="marginleftonly paddingtop">';
-    print img_picto('', 'email', 'class="pictofixedwidth"');
-    print '<input type="email" name="free_attendant_email" class="flat minwidth300" placeholder="' . $langs->trans('Email') . '" value="' . GETPOST('free_attendant_email', 'alpha') . '">';
-    print '</div>';
-    print '</div>';
-    
-    print '</td>';
-    
-    if ($attendantTableMode == 'simple') {
-        print '<td class="center">';
-        print saturne_select_dictionary('attendant_role','c_' . $object->element . '_attendants_role', 'ref');
-        print '</td>';
-    }
-    print '<td colspan="' . ($conf->browser->layout != 'classic' ? 3 : 4) . '"></td>';
-    print '<td class="center">';
-    print '<button type="submit" class="wpeo-button button-blue"><i class="fas fa-plus"></i></button>';
-    print '</td></tr>';
-    print '</form>';
+    // URL complète
+    $urlSource = $protocol . $host . $requestUri;
 
-    print '</table>';
+    print saturne_show_documents($modulePart, $dirFiles, $fileDir, $urlSource, 1, 1, '', 1, 0, 0, 0, 0, '', '', $langs->defaultlang, 0, $object);
 
     print '</div>';
 }

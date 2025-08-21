@@ -243,7 +243,7 @@ function saturne_object_prepare_head(CommonObject $object, $head = [], array $mo
         }
 
         if ($showSpeadTab) {
-            $head[$h][0] = dol_buildpath('/saturne/public/spread/add_spread.php', 1) . '?id=' . $object->id . '&module_name=' . $moduleName . '&object_type=' . $objectType . '&document_type=' . (!empty($moreparam['documentType']) ? $moreparam['documentType'] : '') . '&attendant_table_mode=' . (empty($moreparam['attendantTableMode']) ? 'advanced' : $moreparam['attendantTableMode']);
+            $head[$h][0] = dol_buildpath('/saturne/view/saturne_spread.php', 1) . '?id=' . $object->id . '&module_name=' . $moduleName . '&object_type=' . $objectType . '&document_type=' . (!empty($moreparam['documentType']) ? $moreparam['documentType'] : '') . '&attendant_table_mode=' . (empty($moreparam['attendantTableMode']) ? 'advanced' : $moreparam['attendantTableMode']);
             $head[$h][1] = $conf->browser->layout != 'phone' ? '<i class="fas fa-check-circle pictofixedwidth"></i>' . $langs->trans('Spread') : '<i class="fas fa-check-circle"></i>';
             $head[$h][2] = 'spread';
             $h = $h + 10;
@@ -931,7 +931,6 @@ function saturne_get_objects_metadata(string $type = ''): array
 function saturne_require_objects_mod(array $numberingModulesNames, string $moduleNameLowerCase = ''): array
 {
     global $db;
-
     $variablesToReturn = [];
     if (!empty($numberingModulesNames)) {
         foreach($numberingModulesNames as $objectType => $numberingModulesName) {

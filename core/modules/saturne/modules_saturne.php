@@ -879,7 +879,7 @@ class SaturneDocumentModel extends CommonDocGenerator
                 $arraySoc                   = $this->get_substitutionarray_mysoc($mysoc, $outputLangs);
                 $arraySoc['mycompany_logo'] = preg_replace('/_small/', '_mini', $arraySoc['mycompany_logo']);
 
-                $tmpArray = array_merge($substitutionArray, $arraySoc, $moreParam['tmparray']);
+                $tmpArray = array_merge($substitutionArray, $arraySoc, $moreParam['tmparray'] ?? []);
                 if (isModEnabled('multicompany')) {
                     $tmpArray['entity'] = $conf->entity;
                 } else {
