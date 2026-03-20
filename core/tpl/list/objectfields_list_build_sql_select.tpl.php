@@ -26,11 +26,14 @@
  * Globals    : $conf (extrafields_list_search_sql.tpl), $db, $hookmanager
  * Parameters : $action, $limit, $searchAll, $sortfield, $sortorder, $page
  * Objects    : $extrafields, $object
- * Variables  : $arrayfields, $excludeFields (optional), $fieldsToSearchAll, $offset, $search, $search_array_options (extrafields_list_search_sql.tpl), $searchCategories
+ * Variables  : $arrayfields, $excludeFields (optional), $fieldsToSearchAll, $offset, $search, $search_array_options (extrafields_list_search_sql.tpl),
+ *              $searchCategoriesFilter (optional, signed int array: positive=include, negative=exclude)
  */
 
 // Build and execute select
 // --------------------------------------------------------------------
+/** @var DoliDB $db */
+/** @var CommonObject $object */
 $sql  = 'SELECT';
 $sql .= ' ' . $object->getFieldList('t', $excludeFields ?? []);
 
@@ -64,12 +67,39 @@ if ($object->ismultientitymanaged == 1) {
     $sql .= ' WHERE 1 = 1';
 }
 
-if (isModEnabled('categorie') && isset($categorie->MAP_OBJ_CLASS[$object->element]) && !empty($searchCategories)) {
-    $objectElement = $object->element;
-    if (!empty($object->parent_element)) {
-        $objectElement = $object->parent_element;
+if (isModEnabled('categorie') && isset($categorie->MAP_OBJ_CLASS[$object->element])) {
+    $objectElement = !empty($object->parent_element) ? $object->parent_element : $object->element;
+    $catTable      = $db->prefix() . 'categorie_' . $objectElement;
+
+    // Read from GET/POST if not set by the calling page
+    if (!isset($searchCategoriesFilter)) {
+        $searchCategoriesFilter = array_values(array_filter(array_map('intval', GETPOST('search_categories_filter', 'array'))));
     }
-    $sql .= ' AND EXISTS ( SELECT 1 FROM ' . $db->prefix() . 'categorie_' . $objectElement . ' AS cp WHERE t.rowid = cp.fk_' . $objectElement . ' AND cp.fk_categorie IN (' . implode(',', $searchCategories) . '))';
+
+    // Split signed filter values into include / exclude lists
+    $catIncludeIds = [];
+    $catExcludeIds = [];
+    foreach (($searchCategoriesFilter ?? []) as $filterVal) {
+        $id = abs((int) $filterVal);
+        if ($id <= 0) {
+            continue;
+        }
+        if ((int) $filterVal < 0) {
+            $catExcludeIds[] = $id;
+        } else {
+            $catIncludeIds[] = $id;
+        }
+    }
+
+    // --- Inclusion filter (OR : belongs to at least one of the included categories) ---
+    if (!empty($catIncludeIds)) {
+        $sql .= ' AND EXISTS (SELECT 1 FROM ' . $catTable . ' AS cp WHERE t.rowid = cp.fk_' . $objectElement . ' AND cp.fk_categorie IN (' . implode(',', $catIncludeIds) . '))';
+    }
+
+    // --- Exclusion filter ---
+    if (!empty($catExcludeIds)) {
+        $sql .= ' AND NOT EXISTS (SELECT 1 FROM ' . $catTable . ' AS cpx WHERE t.rowid = cpx.fk_' . $objectElement . ' AND cpx.fk_categorie IN (' . implode(',', $catExcludeIds) . '))';
+    }
 }
 
 $sql .= ' AND t.status >= 0';
