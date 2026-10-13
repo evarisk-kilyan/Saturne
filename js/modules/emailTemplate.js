@@ -74,6 +74,7 @@ window.saturne.emailTemplate.event = function() {
 window.saturne.emailTemplate.updateSub = function() {
     const url = new URL(window.location.href);
     url.searchParams.set('action', 'updateSub');
+    url.searchParams.set('token', window.saturne.toolbox.getToken());
     url.searchParams.set('type_template', $(this).val());
 
     $.ajax({

@@ -375,6 +375,7 @@ class ActionsSaturne
                                 params.append('isFile', isFile ? 1 : 0);
                                 params.append('fileId', fileId);
                                 params.append('action', 'toggle_favorite');
+                                params.set('token', '" . newToken() . "');
 
                                 $.ajax({
                                     url: '" . DOL_URL_ROOT . "/custom/saturne/core/ajax/favorite.php?' + params.toString(),
